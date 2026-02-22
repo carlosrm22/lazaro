@@ -67,6 +67,12 @@ impl TimerEngine {
         &mut self.settings
     }
 
+    pub fn active_break_info(&self) -> Option<(BreakKind, u64)> {
+        self.active_break
+            .as_ref()
+            .map(|active| (active.kind, active.remaining_seconds))
+    }
+
     pub fn on_activity(&mut self, active_seconds: u64, now_local_unix: u64) -> Vec<EngineEvent> {
         let mut events = Vec::new();
         if self.maybe_daily_reset(now_local_unix) {

@@ -3,6 +3,7 @@
   --panel: #11303a;
   --text: #e7f3f7;
   --accent: #f4b942;
+  --danger: #ef5350;
 }
 
 * {
@@ -18,7 +19,7 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 980px;
   margin: 2rem auto;
   padding: 0 1rem;
 }
@@ -51,7 +52,13 @@ button {
   cursor: pointer;
 }
 
+button.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
 pre {
   white-space: pre-wrap;
   word-break: break-word;
+  margin: 0;
 }

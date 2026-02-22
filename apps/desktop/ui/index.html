@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,17 +9,45 @@
   <body>
     <main class="container">
       <h1>Lazaro</h1>
-      <p class="subtitle">Break control panel</p>
+      <p class="subtitle">Panel de control de descansos</p>
+
       <section class="card">
-        <h2>Current Settings</h2>
-        <pre id="settings">Loading...</pre>
+        <h2>Estado del runtime</h2>
+        <pre id="runtime-status">Cargando...</pre>
       </section>
 
       <section class="card row">
-        <button id="refresh">Refresh</button>
-        <button id="strict">Set Strict</button>
-        <button id="xdg">Startup: XDG</button>
-        <button id="both">Startup: XDG + systemd</button>
+        <button id="runtime-start">Iniciar runtime</button>
+        <button id="runtime-stop" class="danger">Detener runtime</button>
+        <button id="start-pending">Iniciar pendiente</button>
+        <button id="snooze-pending">Posponer pendiente</button>
+      </section>
+
+      <section class="card row">
+        <button id="trigger-micro">Forzar micro</button>
+        <button id="trigger-rest">Forzar descanso</button>
+        <button id="strict">Modo estricto</button>
+      </section>
+
+      <section class="card row">
+        <button id="xdg">Autoarranque XDG</button>
+        <button id="both">Autoarranque XDG + systemd</button>
+        <button id="refresh">Refrescar todo</button>
+      </section>
+
+      <section class="card">
+        <h2>Ajustes</h2>
+        <pre id="settings">Cargando...</pre>
+      </section>
+
+      <section class="card">
+        <h2>Analíticas</h2>
+        <pre id="stats">Cargando...</pre>
+      </section>
+
+      <section class="card">
+        <h2>Eventos</h2>
+        <pre id="events">Esperando eventos...</pre>
       </section>
     </main>
     <script src="./app.js" type="module"></script>
