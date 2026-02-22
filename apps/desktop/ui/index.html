@@ -8,48 +8,160 @@
   </head>
   <body>
     <main class="container">
-      <h1>Lazaro</h1>
-      <p class="subtitle">Panel de control de descansos</p>
+      <header class="page-header">
+        <h1>Lazaro</h1>
+        <p class="subtitle">Descansos inteligentes, a tu ritmo</p>
+      </header>
 
       <section class="card">
-        <h2>Estado del runtime</h2>
-        <pre id="runtime-status">Cargando...</pre>
-      </section>
-
-      <section class="card row">
-        <button id="runtime-start">Iniciar runtime</button>
-        <button id="runtime-stop" class="danger">Detener runtime</button>
-        <button id="start-pending">Iniciar pendiente</button>
-        <button id="snooze-pending">Posponer pendiente</button>
-      </section>
-
-      <section class="card row">
-        <button id="trigger-micro">Forzar micro</button>
-        <button id="trigger-rest">Forzar descanso</button>
-        <button id="strict">Modo estricto</button>
-      </section>
-
-      <section class="card row">
-        <button id="xdg">Autoarranque XDG</button>
-        <button id="both">Autoarranque XDG + systemd</button>
-        <button id="refresh">Refrescar todo</button>
+        <div class="card-title-row">
+          <h2>Runtime</h2>
+          <span id="runtime-pill" class="pill">detenido</span>
+        </div>
+        <div class="runtime-grid" id="runtime-grid"></div>
+        <div class="row actions-row">
+          <button id="runtime-start">Iniciar runtime</button>
+          <button id="runtime-stop" class="danger">Detener runtime</button>
+          <button id="start-pending">Iniciar pendiente</button>
+          <button id="snooze-pending">Posponer pendiente</button>
+          <button id="trigger-micro">Forzar micro</button>
+          <button id="trigger-rest">Forzar descanso</button>
+          <button id="refresh">Refrescar</button>
+        </div>
       </section>
 
       <section class="card">
-        <h2>Ajustes</h2>
-        <pre id="settings">Cargando...</pre>
+        <div class="card-title-row">
+          <h2>Ajustes</h2>
+          <div class="row compact-row">
+            <button id="strict" class="secondary">Modo estricto</button>
+            <button id="save-settings">Guardar ajustes</button>
+          </div>
+        </div>
+
+        <form id="settings-form" class="settings-grid">
+          <fieldset>
+            <legend>Micro pausa</legend>
+            <label>Intervalo (s)
+              <input type="number" id="micro_interval_seconds" min="10" step="1" />
+            </label>
+            <label>Duración (s)
+              <input type="number" id="micro_duration_seconds" min="5" step="1" />
+            </label>
+            <label>Posponer (s)
+              <input type="number" id="micro_snooze_seconds" min="5" step="1" />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Descanso</legend>
+            <label>Intervalo (s)
+              <input type="number" id="rest_interval_seconds" min="30" step="1" />
+            </label>
+            <label>Duración (s)
+              <input type="number" id="rest_duration_seconds" min="10" step="1" />
+            </label>
+            <label>Posponer (s)
+              <input type="number" id="rest_snooze_seconds" min="5" step="1" />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Límite diario</legend>
+            <label>Límite (s)
+              <input type="number" id="daily_limit_seconds" min="60" step="1" />
+            </label>
+            <label>Posponer (s)
+              <input type="number" id="daily_limit_snooze_seconds" min="30" step="1" />
+            </label>
+            <label>Reinicio (HH:MM)
+              <input type="time" id="daily_reset_time" step="60" />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Comportamiento</legend>
+            <label>Nivel de bloqueo
+              <select id="block_level">
+                <option value="soft">Suave</option>
+                <option value="medium">Medio</option>
+                <option value="strict">Estricto</option>
+              </select>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="desktop_notifications" />
+              Notificaciones de escritorio
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="overlay_notifications" />
+              Overlay de descanso
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="sound_notifications" />
+              Sonido
+            </label>
+            <label>Tema de sonido
+              <input type="text" id="sound_theme" />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Inicio automático</legend>
+            <label class="checkbox-label">
+              <input type="checkbox" id="startup_xdg" />
+              XDG autostart
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="startup_systemd_user" />
+              systemd --user
+            </label>
+            <label>Perfil activo
+              <input type="text" id="active_profile_id" />
+            </label>
+          </fieldset>
+        </form>
       </section>
 
       <section class="card">
-        <h2>Analíticas</h2>
-        <pre id="stats">Cargando...</pre>
+        <div class="card-title-row">
+          <h2>Analíticas</h2>
+          <span class="muted" id="analytics-summary">semana actual</span>
+        </div>
+        <div class="metrics-grid">
+          <article class="metric"><span>Activo</span><strong id="metric-active">0s</strong></article>
+          <article class="metric"><span>Micro completas</span><strong id="metric-micro">0</strong></article>
+          <article class="metric"><span>Descansos completos</span><strong id="metric-rest">0</strong></article>
+          <article class="metric"><span>Límites diarios</span><strong id="metric-daily">0</strong></article>
+          <article class="metric"><span>Pospuestas/omitidas</span><strong id="metric-skipped">0</strong></article>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label-row">
+            <span>Uso semanal vs objetivo</span>
+            <span id="progress-text">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+        </div>
       </section>
 
       <section class="card">
-        <h2>Eventos</h2>
-        <pre id="events">Esperando eventos...</pre>
+        <div class="card-title-row">
+          <h2>Eventos</h2>
+          <button id="clear-events" class="secondary">Limpiar</button>
+        </div>
+        <ul id="events-list" class="events-list"></ul>
+      </section>
+
+      <section class="card debug-card">
+        <div class="card-title-row">
+          <h2>Debug JSON</h2>
+          <button id="toggle-debug" class="secondary">Mostrar/Ocultar</button>
+        </div>
+        <pre id="debug-json" class="hidden">Sin datos</pre>
       </section>
     </main>
+
     <script src="./app.js" type="module"></script>
   </body>
 </html>
