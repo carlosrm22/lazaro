@@ -457,7 +457,7 @@ fn open_overlay(
             // KDE/Wayland can ignore fullscreen hints on creation in some sessions.
             // Apply multiple placement hints so the break UI lands centered/visible.
             let _ = window.set_fullscreen(true);
-            let _ = window.set_maximized(true);
+            let _ = window.maximize();
             let _ = window.center();
             let _ = window.set_focus();
         }
