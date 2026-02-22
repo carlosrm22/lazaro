@@ -1033,6 +1033,8 @@ fn trigger_break(kind: String, state: tauri::State<'_, BackendState>) -> Result<
 }
 
 fn main() {
+    configure_linux_webkit_runtime();
+
     let persistent = Arc::new(AppState::init().expect("failed to initialize state"));
     let backend = BackendState {
         persistent,
@@ -1059,3 +1061,29 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(target_os = "linux")]
+fn configure_linux_webkit_runtime() {
+    let wayland_session = std::env::var("WAYLAND_DISPLAY").is_ok()
+        || std::env::var("XDG_SESSION_TYPE")
+            .map(|value| value.eq_ignore_ascii_case("wayland"))
+            .unwrap_or(false);
+
+    if !wayland_session {
+        return;
+    }
+
+    // Wayland + WebKit can fail with protocol errors on some drivers/GBM stacks.
+    if std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_err() {
+        unsafe { std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1") };
+    }
+    if std::env::var("WEBKIT_DISABLE_COMPOSITING_MODE").is_err() {
+        unsafe { std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1") };
+    }
+    if std::env::var("GSK_RENDERER").is_err() {
+        unsafe { std::env::set_var("GSK_RENDERER", "cairo") };
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn configure_linux_webkit_runtime() {}
