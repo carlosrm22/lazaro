@@ -68,6 +68,60 @@ const settingsFields = [
   "active_profile_id",
 ];
 
+const timeFields = new Set([
+  "micro_interval_seconds",
+  "micro_duration_seconds",
+  "micro_snooze_seconds",
+  "rest_interval_seconds",
+  "rest_duration_seconds",
+  "rest_snooze_seconds",
+  "daily_limit_seconds",
+  "daily_limit_snooze_seconds",
+]);
+
+function unitSelectId(fieldId) {
+  return `${fieldId}__unit`;
+}
+
+function normalizeNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+  return Math.max(0, parsed);
+}
+
+function preferredUnitFromSeconds(seconds) {
+  const value = Math.max(0, Number(seconds || 0));
+  if (value >= 60 && value % 60 === 0) {
+    return "minutes";
+  }
+  return "seconds";
+}
+
+function formatNumberForInput(value) {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
+  return String(Math.round(value * 100) / 100);
+}
+
+function secondsToDisplay(seconds, unit) {
+  if (unit === "minutes") {
+    return Number(seconds || 0) / 60;
+  }
+  return Number(seconds || 0);
+}
+
+function displayToSeconds(value, unit) {
+  const normalized = normalizeNumber(value);
+  const seconds = unit === "minutes" ? normalized * 60 : normalized;
+  return Math.round(seconds);
+}
+
 function bridgeDebugInfo() {
   return {
     has___TAURI__: Boolean(tauri),
@@ -215,7 +269,7 @@ function renderRuntime() {
     ["running", runtime.running ? "sí" : "no"],
     ["pendiente", runtime.pending_break || "ninguno"],
     ["en descanso", runtime.active_break || "ninguno"],
-    ["restante", runtime.remaining_seconds != null ? `${runtime.remaining_seconds}s` : "-"],
+    ["restante", runtime.remaining_seconds != null ? formatSeconds(runtime.remaining_seconds) : "-"],
     ["próximo tipo", runtime.next_break_kind || "-"],
     ["próximo descanso en", nextBreakIn],
     ["modo estricto", runtime.strict_mode ? "sí" : "no"],
@@ -273,6 +327,14 @@ function renderSettingsForm() {
     const value = state.settings[key];
     if (element.type === "checkbox") {
       element.checked = Boolean(value);
+    } else if (element.type === "number" && timeFields.has(key)) {
+      const unitSelect = document.getElementById(unitSelectId(key));
+      const unit = preferredUnitFromSeconds(value);
+      if (unitSelect) {
+        unitSelect.value = unit;
+        unitSelect.dataset.prevUnit = unit;
+      }
+      element.value = formatNumberForInput(secondsToDisplay(value, unit));
     } else {
       element.value = value ?? "";
     }
@@ -291,7 +353,13 @@ function collectSettingsFromForm() {
     }
 
     if (element.type === "number") {
-      next[key] = Number(element.value || 0);
+      if (timeFields.has(key)) {
+        const unitSelect = document.getElementById(unitSelectId(key));
+        const unit = unitSelect?.value === "minutes" ? "minutes" : "seconds";
+        next[key] = displayToSeconds(element.value, unit);
+      } else {
+        next[key] = Number(element.value || 0);
+      }
       continue;
     }
 
@@ -303,6 +371,29 @@ function collectSettingsFromForm() {
   }
 
   return next;
+}
+
+function setupUnitSelectors() {
+  for (const field of timeFields) {
+    const select = document.getElementById(unitSelectId(field));
+    const input = document.getElementById(field);
+    if (!select || !input) continue;
+
+    select.addEventListener("change", () => {
+      const prevUnit = select.dataset.prevUnit || "seconds";
+      const nextUnit = select.value === "minutes" ? "minutes" : "seconds";
+      if (prevUnit === nextUnit) {
+        return;
+      }
+
+      const currentValue = normalizeNumber(input.value);
+      const seconds = prevUnit === "minutes" ? currentValue * 60 : currentValue;
+      const converted = nextUnit === "minutes" ? seconds / 60 : seconds;
+
+      input.value = formatNumberForInput(converted);
+      select.dataset.prevUnit = nextUnit;
+    });
+  }
 }
 
 function renderAnalytics() {
@@ -563,4 +654,5 @@ if (!state.refreshTimer) {
   }, 2000);
 }
 
+setupUnitSelectors();
 refresh().catch((err) => pushEvent("error", `error inicial: ${String(err)}`));

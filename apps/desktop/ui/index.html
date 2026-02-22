@@ -63,37 +63,85 @@
         <form id="settings-form" class="settings-grid">
           <fieldset>
             <legend>Micro pausa</legend>
-            <label>Intervalo (s)
-              <input type="number" id="micro_interval_seconds" min="10" step="1" />
+            <label>Intervalo
+              <div class="unit-input">
+                <input type="number" id="micro_interval_seconds" min="1" step="any" />
+                <select id="micro_interval_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
-            <label>Duración (s)
-              <input type="number" id="micro_duration_seconds" min="5" step="1" />
+            <label>Duración
+              <div class="unit-input">
+                <input type="number" id="micro_duration_seconds" min="1" step="any" />
+                <select id="micro_duration_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
-            <label>Posponer (s)
-              <input type="number" id="micro_snooze_seconds" min="5" step="1" />
+            <label>Posponer
+              <div class="unit-input">
+                <input type="number" id="micro_snooze_seconds" min="1" step="any" />
+                <select id="micro_snooze_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
           </fieldset>
 
           <fieldset>
             <legend>Descanso</legend>
-            <label>Intervalo (s)
-              <input type="number" id="rest_interval_seconds" min="30" step="1" />
+            <label>Intervalo
+              <div class="unit-input">
+                <input type="number" id="rest_interval_seconds" min="1" step="any" />
+                <select id="rest_interval_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
-            <label>Duración (s)
-              <input type="number" id="rest_duration_seconds" min="10" step="1" />
+            <label>Duración
+              <div class="unit-input">
+                <input type="number" id="rest_duration_seconds" min="1" step="any" />
+                <select id="rest_duration_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
-            <label>Posponer (s)
-              <input type="number" id="rest_snooze_seconds" min="5" step="1" />
+            <label>Posponer
+              <div class="unit-input">
+                <input type="number" id="rest_snooze_seconds" min="1" step="any" />
+                <select id="rest_snooze_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
           </fieldset>
 
           <fieldset>
             <legend>Límite diario</legend>
-            <label>Límite (s)
-              <input type="number" id="daily_limit_seconds" min="60" step="1" />
+            <label>Límite
+              <div class="unit-input">
+                <input type="number" id="daily_limit_seconds" min="1" step="any" />
+                <select id="daily_limit_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
-            <label>Posponer (s)
-              <input type="number" id="daily_limit_snooze_seconds" min="30" step="1" />
+            <label>Posponer
+              <div class="unit-input">
+                <input type="number" id="daily_limit_snooze_seconds" min="1" step="any" />
+                <select id="daily_limit_snooze_seconds__unit">
+                  <option value="seconds">seg</option>
+                  <option value="minutes">min</option>
+                </select>
+              </div>
             </label>
             <label>Reinicio (HH:MM)
               <input type="time" id="daily_reset_time" step="60" />
