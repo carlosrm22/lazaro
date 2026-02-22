@@ -453,7 +453,14 @@ fn open_overlay(
             base_builder.closable(true)
         };
 
-        let _ = builder.build();
+        if let Ok(window) = builder.build() {
+            // KDE/Wayland can ignore fullscreen hints on creation in some sessions.
+            // Apply multiple placement hints so the break UI lands centered/visible.
+            let _ = window.set_fullscreen(true);
+            let _ = window.set_maximized(true);
+            let _ = window.center();
+            let _ = window.set_focus();
+        }
     });
 
     emit_runtime_event(
