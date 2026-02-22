@@ -416,31 +416,39 @@ fn open_overlay(
     overlay_enabled: bool,
     strict_mode: bool,
 ) {
-    if !overlay_enabled {
-        close_overlay(app);
-        return;
-    }
+    let app_handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if !overlay_enabled {
+            if let Some(window) = app_handle.get_webview_window("break-overlay") {
+                let _ = window.close();
+            }
+            return;
+        }
 
-    if let Some(window) = app.get_webview_window("break-overlay") {
-        let _ = window.close();
-    }
+        if let Some(window) = app_handle.get_webview_window("break-overlay") {
+            let _ = window.close();
+        }
 
-    let base_builder =
-        WebviewWindowBuilder::new(app, "break-overlay", WebviewUrl::App("overlay.html".into()))
-            .title("Lazaro - Descanso")
-            .decorations(false)
-            .always_on_top(true)
-            .fullscreen(true)
-            .resizable(false)
-            .skip_taskbar(true);
+        let base_builder = WebviewWindowBuilder::new(
+            &app_handle,
+            "break-overlay",
+            WebviewUrl::App("overlay.html".into()),
+        )
+        .title("Lazaro - Descanso")
+        .decorations(false)
+        .always_on_top(true)
+        .fullscreen(true)
+        .resizable(false)
+        .skip_taskbar(true);
 
-    let builder = if strict_mode {
-        base_builder.closable(false)
-    } else {
-        base_builder.closable(true)
-    };
+        let builder = if strict_mode {
+            base_builder.closable(false)
+        } else {
+            base_builder.closable(true)
+        };
 
-    let _ = builder.build();
+        let _ = builder.build();
+    });
 
     emit_runtime_event(
         app,
@@ -455,9 +463,12 @@ fn open_overlay(
 }
 
 fn close_overlay(app: &AppHandle) {
-    if let Some(window) = app.get_webview_window("break-overlay") {
-        let _ = window.close();
-    }
+    let app_handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if let Some(window) = app_handle.get_webview_window("break-overlay") {
+            let _ = window.close();
+        }
+    });
 }
 
 fn resolve_autostart_exec() -> String {
