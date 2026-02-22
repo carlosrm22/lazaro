@@ -246,6 +246,8 @@ struct RuntimeStatusDto {
     pending_break: Option<String>,
     active_break: Option<String>,
     remaining_seconds: Option<u64>,
+    next_break_kind: Option<String>,
+    next_break_seconds: Option<u64>,
     strict_mode: bool,
     last_event: String,
 }
@@ -257,6 +259,8 @@ impl Default for RuntimeStatusDto {
             pending_break: None,
             active_break: None,
             remaining_seconds: None,
+            next_break_kind: None,
+            next_break_seconds: None,
             strict_mode: false,
             last_event: "idle".into(),
         }
@@ -733,12 +737,15 @@ fn runtime_loop(
         }
 
         if let Ok(mut guard) = status.lock() {
+            let next_break = engine.next_break_eta(now);
             guard.running = true;
             guard.pending_break = pending_break.map(break_kind_to_string);
             guard.active_break = engine
                 .active_break_info()
                 .map(|(kind, _)| break_kind_to_string(kind));
             guard.remaining_seconds = engine.active_break_info().map(|(_, remaining)| remaining);
+            guard.next_break_kind = next_break.map(|(kind, _)| break_kind_to_string(kind));
+            guard.next_break_seconds = next_break.map(|(_, remaining)| remaining);
             guard.strict_mode = matches!(core_settings.block_level, BlockLevel::Strict);
             guard.last_event = "tick".into();
         }
@@ -759,6 +766,8 @@ fn runtime_loop(
         guard.pending_break = None;
         guard.active_break = None;
         guard.remaining_seconds = None;
+        guard.next_break_kind = None;
+        guard.next_break_seconds = None;
         guard.last_event = "runtime_stopped".into();
     }
 }

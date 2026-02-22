@@ -73,6 +73,56 @@ impl TimerEngine {
             .map(|active| (active.kind, active.remaining_seconds))
     }
 
+    pub fn next_break_eta(&self, now_local_unix: u64) -> Option<(BreakKind, u64)> {
+        if self.active_break.is_some() {
+            return None;
+        }
+
+        let mut candidates: Vec<(BreakKind, u64)> = Vec::new();
+
+        if self.settings.micro.enabled {
+            let countdown = self
+                .settings
+                .micro
+                .interval_seconds
+                .saturating_sub(self.micro_active)
+                .max(self.snooze_remaining(self.micro_snooze_until, now_local_unix));
+            candidates.push((BreakKind::Micro, countdown));
+        }
+
+        if self.settings.rest.enabled {
+            let countdown = self
+                .settings
+                .rest
+                .interval_seconds
+                .saturating_sub(self.rest_active)
+                .max(self.snooze_remaining(self.rest_snooze_until, now_local_unix));
+            candidates.push((BreakKind::Rest, countdown));
+        }
+
+        if self.settings.daily_limit.enabled {
+            let countdown = self
+                .settings
+                .daily_limit
+                .limit_seconds
+                .saturating_sub(self.daily_active)
+                .max(self.snooze_remaining(self.daily_snooze_until, now_local_unix));
+
+            let until_reset = self.seconds_until_next_reset(
+                now_local_unix,
+                self.settings.daily_limit.reset_offset_seconds(),
+            );
+
+            if countdown < until_reset {
+                candidates.push((BreakKind::DailyLimit, countdown));
+            }
+        }
+
+        candidates
+            .into_iter()
+            .min_by_key(|(kind, countdown)| (*countdown, Self::kind_priority(*kind)))
+    }
+
     pub fn on_activity(&mut self, active_seconds: u64, now_local_unix: u64) -> Vec<EngineEvent> {
         let mut events = Vec::new();
         if self.maybe_daily_reset(now_local_unix) {
@@ -174,6 +224,20 @@ impl TimerEngine {
         None
     }
 
+    fn kind_priority(kind: BreakKind) -> u8 {
+        match kind {
+            BreakKind::Micro => 0,
+            BreakKind::Rest => 1,
+            BreakKind::DailyLimit => 2,
+        }
+    }
+
+    fn snooze_remaining(&self, until: Option<u64>, now_local_unix: u64) -> u64 {
+        until
+            .map(|value| value.saturating_sub(now_local_unix))
+            .unwrap_or(0)
+    }
+
     fn complete_break(&mut self, kind: BreakKind) {
         match kind {
             BreakKind::Micro => self.micro_active = 0,
@@ -209,6 +273,16 @@ impl TimerEngine {
 
     fn daily_bucket(now_local_unix: u64, reset_offset_seconds: u64) -> i64 {
         ((now_local_unix as i64 - reset_offset_seconds as i64) / 86_400) as i64
+    }
+
+    fn seconds_until_next_reset(&self, now_local_unix: u64, reset_offset_seconds: u64) -> u64 {
+        let current_bucket = Self::daily_bucket(now_local_unix, reset_offset_seconds);
+        let next_reset = (current_bucket + 1) * 86_400 + reset_offset_seconds as i64;
+        if next_reset <= now_local_unix as i64 {
+            0
+        } else {
+            (next_reset as u64).saturating_sub(now_local_unix)
+        }
     }
 }
 
@@ -267,5 +341,29 @@ mod tests {
 
         assert!(events.contains(&EngineEvent::DailyReset));
         assert!(!events.contains(&EngineEvent::BreakDue(BreakKind::DailyLimit)));
+    }
+
+    #[test]
+    fn next_break_eta_prefers_earliest_kind() {
+        let settings = Settings::default();
+        let mut engine = TimerEngine::new(settings, 0);
+
+        let _ = engine.on_activity(120, 120);
+        let (kind, eta) = engine.next_break_eta(120).expect("expected eta");
+        assert_eq!(kind, BreakKind::Micro);
+        assert_eq!(eta, 60);
+    }
+
+    #[test]
+    fn next_break_eta_accounts_for_snooze() {
+        let settings = Settings::default();
+        let mut engine = TimerEngine::new(settings, 0);
+
+        let _ = engine.on_activity(180, 180);
+        let _ = engine.snooze(BreakKind::Micro, 180);
+
+        let (kind, eta) = engine.next_break_eta(200).expect("expected eta");
+        assert_eq!(kind, BreakKind::Micro);
+        assert_eq!(eta, 130);
     }
 }

@@ -199,12 +199,25 @@ function renderEvents() {
 function renderRuntime() {
   const runtime = state.runtime || {};
   const container = document.getElementById("runtime-grid");
+  let nextBreakIn = "-";
+  if (runtime.running) {
+    if (runtime.active_break) {
+      nextBreakIn = "descanso en curso";
+    } else if (runtime.next_break_seconds != null) {
+      nextBreakIn =
+        runtime.next_break_seconds === 0
+          ? "ahora"
+          : formatSeconds(runtime.next_break_seconds);
+    }
+  }
 
   const entries = [
     ["running", runtime.running ? "sí" : "no"],
     ["pendiente", runtime.pending_break || "ninguno"],
     ["en descanso", runtime.active_break || "ninguno"],
     ["restante", runtime.remaining_seconds != null ? `${runtime.remaining_seconds}s` : "-"],
+    ["próximo tipo", runtime.next_break_kind || "-"],
+    ["próximo descanso en", nextBreakIn],
     ["modo estricto", runtime.strict_mode ? "sí" : "no"],
     ["último evento", runtime.last_event || "-"]
   ];
