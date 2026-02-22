@@ -272,7 +272,10 @@ fn list_profiles(state: tauri::State<'_, AppState>) -> Result<Vec<ProfileDto>, A
 }
 
 #[tauri::command]
-fn save_profile(profile: ProfileDto, state: tauri::State<'_, AppState>) -> Result<ProfileDto, AppError> {
+fn save_profile(
+    profile: ProfileDto,
+    state: tauri::State<'_, AppState>,
+) -> Result<ProfileDto, AppError> {
     {
         let mut guard = state
             .data

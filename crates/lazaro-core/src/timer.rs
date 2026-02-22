@@ -44,7 +44,8 @@ pub struct TimerEngine {
 
 impl TimerEngine {
     pub fn new(settings: Settings, now_local_unix: u64) -> Self {
-        let bucket = Self::daily_bucket(now_local_unix, settings.daily_limit.reset_offset_seconds());
+        let bucket =
+            Self::daily_bucket(now_local_unix, settings.daily_limit.reset_offset_seconds());
         Self {
             settings,
             micro_active: 0,
@@ -126,9 +127,7 @@ impl TimerEngine {
 
     pub fn snooze(&mut self, kind: BreakKind, now_local_unix: u64) -> Option<EngineEvent> {
         let until = match kind {
-            BreakKind::Micro => {
-                now_local_unix.saturating_add(self.settings.micro.snooze_seconds)
-            }
+            BreakKind::Micro => now_local_unix.saturating_add(self.settings.micro.snooze_seconds),
             BreakKind::Rest => now_local_unix.saturating_add(self.settings.rest.snooze_seconds),
             BreakKind::DailyLimit => {
                 now_local_unix.saturating_add(self.settings.daily_limit.snooze_seconds)
@@ -189,7 +188,10 @@ impl TimerEngine {
     }
 
     fn maybe_daily_reset(&mut self, now_local_unix: u64) -> bool {
-        let bucket = Self::daily_bucket(now_local_unix, self.settings.daily_limit.reset_offset_seconds());
+        let bucket = Self::daily_bucket(
+            now_local_unix,
+            self.settings.daily_limit.reset_offset_seconds(),
+        );
         if bucket != self.last_reset_bucket {
             self.last_reset_bucket = bucket;
             self.daily_active = 0;
