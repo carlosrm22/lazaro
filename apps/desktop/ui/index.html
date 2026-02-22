@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lazaro</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Lazaro</h1>
+      <p class="subtitle">Break control panel</p>
+      <section class="card">
+        <h2>Current Settings</h2>
+        <pre id="settings">Loading...</pre>
+      </section>
+
+      <section class="card row">
+        <button id="refresh">Refresh</button>
+        <button id="strict">Set Strict</button>
+        <button id="xdg">Startup: XDG</button>
+        <button id="both">Startup: XDG + systemd</button>
+      </section>
+    </main>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
