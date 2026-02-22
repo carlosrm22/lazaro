@@ -42,6 +42,7 @@ const state = {
   settings: null,
   stats: null,
   runtime: null,
+  profiles: [],
   events: [],
   refreshTimer: null,
   showDebug: false,
@@ -90,6 +91,39 @@ function formatSeconds(totalSeconds) {
     return `${m}m ${s}s`;
   }
   return `${s}s`;
+}
+
+function normalizeProfileId(value) {
+  const normalized = (value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || "perfil";
+}
+
+function uniqueProfileId(baseId) {
+  const ids = new Set((state.profiles || []).map((profile) => profile.id));
+  if (!ids.has(baseId)) {
+    return baseId;
+  }
+
+  let index = 2;
+  while (ids.has(`${baseId}-${index}`)) {
+    index += 1;
+  }
+  return `${baseId}-${index}`;
+}
+
+function getSelectedProfile() {
+  const select = document.getElementById("profile-select");
+  const id = select?.value;
+  return state.profiles.find((profile) => profile.id === id) || null;
+}
+
+function getProfileById(id) {
+  return state.profiles.find((profile) => profile.id === id) || null;
 }
 
 function beep() {
@@ -196,6 +230,26 @@ function renderRuntime() {
   pill.classList.toggle("running", Boolean(runtime.running));
 }
 
+function renderProfiles() {
+  const select = document.getElementById("profile-select");
+  select.innerHTML = "";
+
+  const sorted = [...state.profiles].sort((a, b) => a.name.localeCompare(b.name));
+  for (const profile of sorted) {
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = `${profile.name} (${profile.id})`;
+    if (state.settings?.active_profile_id === profile.id) {
+      option.selected = true;
+    }
+    select.appendChild(option);
+  }
+
+  if (!select.value && sorted.length > 0) {
+    select.value = sorted[0].id;
+  }
+}
+
 function renderSettingsForm() {
   if (!state.settings) return;
 
@@ -231,6 +285,10 @@ function collectSettingsFromForm() {
     next[key] = element.value;
   }
 
+  if (!next.active_profile_id) {
+    next.active_profile_id = state.settings?.active_profile_id || "default";
+  }
+
   return next;
 }
 
@@ -259,6 +317,7 @@ function renderDebug() {
     {
       bridge: bridgeDebugInfo(),
       settings: state.settings,
+      profiles: state.profiles,
       stats: state.stats,
       runtime: state.runtime,
     },
@@ -269,6 +328,7 @@ function renderDebug() {
 
 function renderAll() {
   renderRuntime();
+  renderProfiles();
   renderSettingsForm();
   renderAnalytics();
   renderEvents();
@@ -288,16 +348,32 @@ async function refresh() {
     return;
   }
 
-  const [settings, stats, runtime] = await Promise.all([
+  const [settings, stats, runtime, profiles] = await Promise.all([
     invoke("get_settings"),
     invoke("get_weekly_stats"),
     invoke("get_runtime_status"),
+    invoke("list_profiles"),
   ]);
 
   state.settings = settings;
   state.stats = stats;
   state.runtime = runtime;
+  state.profiles = profiles || [];
   renderAll();
+}
+
+async function syncActiveProfileFromSettings() {
+  if (!state.settings) return;
+  const profile = getProfileById(state.settings.active_profile_id);
+  if (!profile) return;
+
+  await invoke("save_profile", {
+    profile: {
+      id: profile.id,
+      name: profile.name,
+      settings: state.settings,
+    },
+  });
 }
 
 async function withAction(name, action) {
@@ -343,6 +419,7 @@ document.getElementById("strict").addEventListener("click", async () => {
   await withAction("modo estricto", async () => {
     const next = { ...state.settings, block_level: "strict" };
     state.settings = await invoke("update_settings", { settings: next });
+    await syncActiveProfileFromSettings();
   });
 });
 
@@ -350,9 +427,87 @@ document.getElementById("save-settings").addEventListener("click", async () => {
   await withAction("guardar ajustes", async () => {
     const next = collectSettingsFromForm();
     state.settings = await invoke("update_settings", { settings: next });
+    await syncActiveProfileFromSettings();
 
     const startupMode = next.startup_systemd_user ? "xdg_and_systemd" : "xdg_only";
     await invoke("set_startup_mode", { mode: startupMode });
+  });
+});
+
+document.getElementById("activate-profile").addEventListener("click", async () => {
+  await withAction("activar perfil", async () => {
+    const selected = document.getElementById("profile-select").value;
+    if (!selected) {
+      throw new Error("selecciona un perfil");
+    }
+
+    await invoke("activate_profile", { profileId: selected });
+  });
+});
+
+document.getElementById("create-profile").addEventListener("click", async () => {
+  await withAction("crear perfil", async () => {
+    const profileName = document.getElementById("profile-name").value.trim();
+    if (!profileName) {
+      throw new Error("escribe un nombre de perfil");
+    }
+
+    const baseId = normalizeProfileId(profileName);
+    const id = uniqueProfileId(baseId);
+
+    const settings = collectSettingsFromForm();
+    settings.active_profile_id = id;
+
+    await invoke("save_profile", {
+      profile: {
+        id,
+        name: profileName,
+        settings,
+      },
+    });
+
+    await invoke("activate_profile", { profileId: id });
+    document.getElementById("profile-name").value = "";
+  });
+});
+
+document.getElementById("duplicate-profile").addEventListener("click", async () => {
+  await withAction("duplicar perfil", async () => {
+    const selected = getSelectedProfile();
+    if (!selected) {
+      throw new Error("selecciona un perfil");
+    }
+
+    const customName = document.getElementById("profile-name").value.trim();
+    const profileName = customName || `${selected.name} copia`;
+    const id = uniqueProfileId(normalizeProfileId(profileName));
+
+    const duplicatedSettings = { ...selected.settings, active_profile_id: id };
+
+    await invoke("save_profile", {
+      profile: {
+        id,
+        name: profileName,
+        settings: duplicatedSettings,
+      },
+    });
+
+    await invoke("activate_profile", { profileId: id });
+    document.getElementById("profile-name").value = "";
+  });
+});
+
+document.getElementById("delete-profile").addEventListener("click", async () => {
+  await withAction("eliminar perfil", async () => {
+    const selected = document.getElementById("profile-select").value;
+    if (!selected) {
+      throw new Error("selecciona un perfil");
+    }
+    if (selected === "default") {
+      throw new Error("no puedes eliminar el perfil default");
+    }
+
+    await invoke("remove_profile", { profileId: selected });
   });
 });
 

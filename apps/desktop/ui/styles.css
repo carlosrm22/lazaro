@@ -139,6 +139,12 @@ button:hover {
   font-size: 0.95rem;
 }
 
+.profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.8rem;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));

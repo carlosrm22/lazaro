@@ -28,6 +28,8 @@ enum AppError {
     Io(String),
     #[error("profile not found: {0}")]
     ProfileNotFound(String),
+    #[error("default profile cannot be deleted")]
+    CannotDeleteDefaultProfile,
     #[error("invalid break kind: {0}")]
     InvalidBreakKind(String),
     #[error("invalid reset time format: {0}")]
@@ -861,6 +863,63 @@ fn activate_profile(
 }
 
 #[tauri::command]
+fn remove_profile(
+    profile_id: String,
+    state: tauri::State<'_, BackendState>,
+) -> Result<(), AppError> {
+    if profile_id == "default" {
+        return Err(AppError::CannotDeleteDefaultProfile);
+    }
+
+    let updated_settings = {
+        let mut guard = state
+            .persistent
+            .data
+            .lock()
+            .map_err(|e| AppError::Io(format!("mutex poisoned: {e}")))?;
+
+        let removed = guard.profiles.remove(&profile_id);
+        if removed.is_none() {
+            return Err(AppError::ProfileNotFound(profile_id));
+        }
+
+        if guard.settings.active_profile_id == profile_id {
+            let fallback = guard
+                .profiles
+                .get("default")
+                .cloned()
+                .or_else(|| guard.profiles.values().next().cloned());
+
+            if let Some(profile) = fallback {
+                guard.settings = profile.settings;
+                guard.settings.active_profile_id = profile.id;
+                Some(guard.settings.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+
+    state.persistent.save()?;
+
+    if let Some(settings) = updated_settings {
+        let core = settings_to_core(&settings)?;
+        if let Ok(runtime) = state.runtime.lock()
+            && let Some(tx) = runtime.tx.clone()
+        {
+            let _ = tx.send(RuntimeControl::UpdateSettings {
+                core,
+                dto: settings,
+            });
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 fn get_weekly_stats(state: tauri::State<'_, BackendState>) -> Result<WeeklyStatsDto, AppError> {
     let guard = state
         .persistent
@@ -1049,6 +1108,7 @@ fn main() {
             list_profiles,
             save_profile,
             activate_profile,
+            remove_profile,
             get_weekly_stats,
             set_startup_mode,
             start_runtime,

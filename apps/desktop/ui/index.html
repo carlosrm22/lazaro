@@ -32,6 +32,27 @@
 
       <section class="card">
         <div class="card-title-row">
+          <h2>Perfiles</h2>
+          <span class="muted">oficina, gaming, enfoque</span>
+        </div>
+        <div class="profiles-grid">
+          <label>Perfil activo
+            <select id="profile-select"></select>
+          </label>
+          <label>Nombre nuevo perfil
+            <input type="text" id="profile-name" placeholder="Ejemplo: Gaming nocturno" />
+          </label>
+        </div>
+        <div class="row actions-row">
+          <button id="activate-profile">Activar perfil</button>
+          <button id="create-profile">Crear desde ajustes</button>
+          <button id="duplicate-profile" class="secondary">Duplicar seleccionado</button>
+          <button id="delete-profile" class="danger">Eliminar seleccionado</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
           <h2>Ajustes</h2>
           <div class="row compact-row">
             <button id="strict" class="secondary">Modo estricto</button>
@@ -115,11 +136,9 @@
               <input type="checkbox" id="startup_systemd_user" />
               systemd --user
             </label>
-            <label>Perfil activo
-              <input type="text" id="active_profile_id" />
-            </label>
           </fieldset>
         </form>
+        <input type="hidden" id="active_profile_id" />
       </section>
 
       <section class="card">
