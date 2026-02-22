@@ -1,8 +1,45 @@
 const tauri = window.__TAURI__;
-const invoke = tauri?.core?.invoke;
-const listen = tauri?.event?.listen;
+const internals = window.__TAURI_INTERNALS__;
+
+function resolveInvoke() {
+  const candidates = [
+    tauri?.core?.invoke,
+    tauri?.invoke,
+    internals?.invoke,
+    window.__TAURI_INVOKE__,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "function") {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function resolveListen() {
+  const candidates = [tauri?.event?.listen, tauri?.listen];
+  for (const candidate of candidates) {
+    if (typeof candidate === "function") {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+const invokeRaw = resolveInvoke();
+const listen = resolveListen();
+
+async function invoke(command, args = {}) {
+  if (typeof invokeRaw !== "function") {
+    throw new Error("bridge_invoke_unavailable");
+  }
+  return invokeRaw(command, args);
+}
 
 const eventsBuffer = [];
+let refreshTimer = null;
 
 function beep() {
   try {
@@ -32,10 +69,28 @@ function pushEvent(entry) {
   document.getElementById("events").textContent = eventsBuffer.join("\n");
 }
 
+function bridgeDebugInfo() {
+  return {
+    has___TAURI__: Boolean(tauri),
+    tauri_keys: tauri ? Object.keys(tauri) : [],
+    has___TAURI_INTERNALS__: Boolean(internals),
+    internals_keys: internals ? Object.keys(internals) : [],
+    invoke_type: typeof invokeRaw,
+    listen_type: typeof listen,
+  };
+}
+
 async function refresh() {
-  if (!invoke) {
-    document.getElementById("settings").textContent =
-      "Puente Tauri no disponible. Ejecuta dentro de la app de escritorio.";
+  if (typeof invokeRaw !== "function") {
+    const debug = bridgeDebugInfo();
+    const text =
+      "Puente Tauri no disponible.\n\n" +
+      "Diagnóstico:\n" +
+      JSON.stringify(debug, null, 2);
+
+    document.getElementById("settings").textContent = text;
+    document.getElementById("stats").textContent = text;
+    document.getElementById("runtime-status").textContent = text;
     return;
   }
 
@@ -87,7 +142,7 @@ document.getElementById("trigger-rest").addEventListener("click", () =>
 );
 
 document.getElementById("strict").addEventListener("click", async () => {
-  if (!invoke) return;
+  if (typeof invokeRaw !== "function") return;
   await withAction("modo estricto", async () => {
     const settings = await invoke("get_settings");
     settings.block_level = "strict";
@@ -107,20 +162,36 @@ document.getElementById("both").addEventListener("click", () =>
   )
 );
 
-if (listen) {
-  listen("runtime://event", async (event) => {
-    const payload = event.payload || {};
-    const label = `${payload.kind || "evento"}: ${payload.message || ""}`;
-    pushEvent(label.trim());
+if (typeof listen === "function") {
+  try {
+    listen("runtime://event", async (event) => {
+      const payload = event.payload || {};
+      const label = `${payload.kind || "evento"}: ${payload.message || ""}`;
+      pushEvent(label.trim());
 
-    if (payload.kind === "break_due" || payload.kind === "break_started") {
-      beep();
-    }
+      if (payload.kind === "break_due" || payload.kind === "break_started") {
+        beep();
+      }
 
-    if (payload.kind === "break_tick" || payload.kind === "break_completed") {
-      await refresh();
-    }
-  });
+      if (payload.kind === "break_tick" || payload.kind === "break_completed") {
+        await refresh();
+      }
+    });
+  } catch (err) {
+    pushEvent(`WARN: listener no disponible (${String(err)})`);
+  }
+} else {
+  pushEvent("INFO: sin listener de eventos; usando refresco periódico.");
 }
 
-refresh();
+if (!refreshTimer) {
+  refreshTimer = setInterval(() => {
+    refresh().catch((err) => {
+      pushEvent(`WARN refresh: ${String(err)}`);
+    });
+  }, 2000);
+}
+
+refresh().catch((err) => {
+  pushEvent(`ERROR inicial: ${String(err)}`);
+});
