@@ -443,9 +443,9 @@ fn open_overlay(
         .title("Lazaro - Descanso")
         .decorations(false)
         .always_on_top(true)
-        .fullscreen(true)
         .resizable(false)
-        .skip_taskbar(true);
+        .skip_taskbar(true)
+        .inner_size(920.0, 680.0);
 
         let builder = if strict_mode {
             base_builder.closable(false)
@@ -454,10 +454,6 @@ fn open_overlay(
         };
 
         if let Ok(window) = builder.build() {
-            // KDE/Wayland can ignore fullscreen hints on creation in some sessions.
-            // Apply multiple placement hints so the break UI lands centered/visible.
-            let _ = window.set_fullscreen(true);
-            let _ = window.maximize();
             let _ = window.center();
             let _ = window.set_focus();
         }
