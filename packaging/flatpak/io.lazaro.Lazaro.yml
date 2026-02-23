@@ -1,13 +1,21 @@
 app-id: io.lazaro.Lazaro
+branch: stable
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/lazaro/cargo
+    CARGO_NET_OFFLINE: 'true'
 command: lazaro
 finish-args:
-  - --share=network
   - --share=ipc
   - --socket=x11
   - --socket=wayland
+  - --device=dri
   - --talk-name=org.freedesktop.Notifications
   - --filesystem=xdg-config/autostart:create
   - --filesystem=xdg-config/systemd/user:create
@@ -16,8 +24,12 @@ modules:
   - name: lazaro
     buildsystem: simple
     build-commands:
-      - cargo build --release --manifest-path apps/desktop/src-tauri/Cargo.toml
-      - install -D apps/desktop/src-tauri/target/release/lazaro /app/bin/lazaro
+      - cargo build --release --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - install -D target/release/lazaro /app/bin/lazaro
+      - install -D packaging/flatpak/io.lazaro.Lazaro.desktop /app/share/applications/io.lazaro.Lazaro.desktop
+      - install -D packaging/flatpak/io.lazaro.Lazaro.metainfo.xml /app/share/metainfo/io.lazaro.Lazaro.metainfo.xml
+      - install -D packaging/flatpak/io.lazaro.Lazaro.svg /app/share/icons/hicolor/scalable/apps/io.lazaro.Lazaro.svg
     sources:
+      - packaging/flatpak/cargo-sources.json
       - type: dir
         path: ../../

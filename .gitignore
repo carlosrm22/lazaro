@@ -11,3 +11,5 @@ yarn-error.log*
 .env
 apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/.tauri/
+dist/
+packaging/flatpak/cargo-sources.json

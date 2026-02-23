@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Lazaro icon">
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#163847"/>
+      <stop offset="100%" stop-color="#0b1d29"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#5bb0ff"/>
+      <stop offset="100%" stop-color="#f4b942"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="48" fill="url(#bg)"/>
+  <circle cx="128" cy="128" r="66" fill="none" stroke="#d5e7ee" stroke-width="12" opacity="0.85"/>
+  <path d="M128 128 L128 86" stroke="url(#accent)" stroke-width="14" stroke-linecap="round"/>
+  <path d="M128 128 L162 148" stroke="url(#accent)" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="128" cy="128" r="10" fill="#f4b942"/>
+</svg>

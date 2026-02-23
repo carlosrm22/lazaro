@@ -548,6 +548,13 @@ fn close_overlay(app: &AppHandle) {
 }
 
 fn resolve_autostart_exec() -> String {
+    let in_flatpak = std::env::var("FLATPAK_ID")
+        .map(|value| value == "io.lazaro.Lazaro")
+        .unwrap_or(false);
+    if in_flatpak {
+        return "flatpak run io.lazaro.Lazaro".into();
+    }
+
     let flatpak_available = Command::new("flatpak")
         .arg("info")
         .arg("io.lazaro.Lazaro")

@@ -9,6 +9,7 @@ This repository contains:
 - `apps/desktop/src-tauri`: desktop shell scaffold for Tauri commands and startup management.
 - setup scripts for XDG autostart and systemd --user.
 - initial Flatpak manifest and CI workflow.
+- Flatpak release pipeline with GitHub Releases + GitHub Pages repo for updates.
 
 ## Features planned in V1
 
@@ -61,4 +62,55 @@ Create and push private repo once authenticated:
 ```bash
 gh auth login
 gh repo create lazaro --private --source . --remote origin --push
+```
+
+## Flatpak packaging
+
+### Build local Flatpak bundle + repo
+
+Requirements:
+- `flatpak`, `flatpak-builder`
+- `flatpak-cargo-generator` (`pip install --user flatpak-cargo-generator`)
+
+Build:
+
+```bash
+./scripts/build_flatpak.sh
+```
+
+Install generated bundle:
+
+```bash
+flatpak install --user dist/io.lazaro.Lazaro-local-*.flatpak
+flatpak run io.lazaro.Lazaro
+```
+
+### Release automation
+
+Workflow: `.github/workflows/flatpak-release.yml`
+
+Trigger release build:
+- push a tag `v*` (for example `v0.1.1`)
+- or run `workflow_dispatch` manually
+
+On tag:
+- builds Flatpak bundle (`.flatpak`)
+- uploads bundle as workflow artifact
+- attaches bundle to GitHub Release
+- publishes Flatpak repo to GitHub Pages (`https://<owner>.github.io/<repo>/`)
+
+## Updates strategy
+
+For automatic updates on user machines, use the published Flatpak repo:
+
+```bash
+flatpak remote-add --if-not-exists lazaro https://carlosrm22.github.io/lazaro/
+flatpak install lazaro io.lazaro.Lazaro
+flatpak update io.lazaro.Lazaro
+```
+
+Helper script:
+
+```bash
+./scripts/flatpak_add_remote.sh https://carlosrm22.github.io/lazaro/
 ```

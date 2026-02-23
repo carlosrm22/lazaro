@@ -1,0 +1,105 @@
+name: Flatpak Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-flatpak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder python3-pip
+
+      - name: Install Rust source generator
+        run: |
+          python3 -m pip install --user flatpak-cargo-generator
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install Flatpak SDK and runtime
+        run: |
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.freedesktop.Sdk.Extension.rust-stable//24.08
+
+      - name: Generate cargo-sources.json
+        run: |
+          flatpak-cargo-generator Cargo.lock -o packaging/flatpak/cargo-sources.json
+
+      - name: Build Flatpak repo and bundle
+        run: |
+          mkdir -p dist
+          flatpak-builder --force-clean --repo=dist/repo dist/build packaging/flatpak/io.lazaro.Lazaro.yml
+          flatpak build-update-repo dist/repo --generate-static-deltas --prune
+          BUNDLE_NAME="io.lazaro.Lazaro-${GITHUB_REF_NAME:-dev}-${GITHUB_SHA::7}.flatpak"
+          flatpak build-bundle dist/repo "dist/${BUNDLE_NAME}" io.lazaro.Lazaro stable
+          echo "BUNDLE_NAME=${BUNDLE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Add repo landing page
+        run: |
+          cat > dist/repo/index.html <<'EOF'
+          <!doctype html>
+          <html lang="es">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>Lazaro Flatpak Repo</title>
+            </head>
+            <body style="font-family: sans-serif; max-width: 780px; margin: 2rem auto; line-height: 1.5;">
+              <h1>Lazaro Flatpak Repo</h1>
+              <p>Agregar repositorio:</p>
+              <pre>flatpak remote-add --if-not-exists lazaro https://carlosrm22.github.io/lazaro/</pre>
+              <p>Instalar app:</p>
+              <pre>flatpak install lazaro io.lazaro.Lazaro</pre>
+              <p>Actualizar app:</p>
+              <pre>flatpak update io.lazaro.Lazaro</pre>
+            </body>
+          </html>
+          EOF
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-bundle
+          path: dist/*.flatpak
+
+      - name: Upload repo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-repo
+          path: dist/repo
+
+      - name: Attach bundle to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.flatpak
+          generate_release_notes: true
+
+      - name: Upload Pages artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/repo
+
+  deploy-pages:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-flatpak
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy flatpak repo to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

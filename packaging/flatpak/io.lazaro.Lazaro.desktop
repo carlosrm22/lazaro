@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Lazaro
+Comment=Recordatorios de descansos personalizados
+Exec=lazaro
+Icon=io.lazaro.Lazaro
+Terminal=false
+Categories=Utility;Office;
+StartupNotify=true

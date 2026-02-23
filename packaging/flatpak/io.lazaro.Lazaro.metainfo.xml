@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.lazaro.Lazaro</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Lazaro</name>
+  <summary>Recordatorios de descanso para evitar sedentarismo</summary>
+  <description>
+    <p>
+      Lazaro te ayuda a tomar micro pausas y descansos largos con perfiles configurables,
+      recordatorios visuales y modo estricto.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.lazaro.Lazaro.desktop</launchable>
+  <provides>
+    <binary>lazaro</binary>
+  </provides>
+  <categories>
+    <category>Utility</category>
+    <category>Office</category>
+  </categories>
+  <url type="homepage">https://github.com/carlosrm22/lazaro</url>
+  <developer id="io.lazaro">
+    <name>Lazaro Contributors</name>
+  </developer>
+  <releases>
+    <release version="0.1.0" date="2026-02-23"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>
