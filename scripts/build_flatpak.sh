@@ -19,6 +19,14 @@ if ! command -v flatpak-cargo-generator >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! flatpak info --user org.gnome.Sdk//48 >/dev/null 2>&1 || ! flatpak info --user org.gnome.Platform//48 >/dev/null 2>&1; then
+  echo "Faltan runtimes Flatpak requeridos."
+  echo "Ejecuta:"
+  echo "  flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+  echo "  flatpak install --user -y flathub org.gnome.Platform//48 org.gnome.Sdk//48 org.freedesktop.Sdk.Extension.rust-stable//24.08"
+  exit 1
+fi
+
 mkdir -p "$DIST_DIR"
 
 echo "Generando packaging/flatpak/cargo-sources.json ..."

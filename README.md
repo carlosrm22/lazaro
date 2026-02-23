@@ -71,6 +71,17 @@ gh repo create lazaro --private --source . --remote origin --push
 Requirements:
 - `flatpak`, `flatpak-builder`
 - `flatpak-cargo-generator` (`pip install --user flatpak-cargo-generator`)
+- runtimes Flatpak:
+  - `org.gnome.Platform//48`
+  - `org.gnome.Sdk//48`
+  - `org.freedesktop.Sdk.Extension.rust-stable//24.08`
+
+Install runtimes:
+
+```bash
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user -y flathub org.gnome.Platform//48 org.gnome.Sdk//48 org.freedesktop.Sdk.Extension.rust-stable//24.08
+```
 
 Build:
 
