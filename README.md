@@ -99,6 +99,25 @@ On tag:
 - attaches bundle to GitHub Release
 - publishes Flatpak repo to GitHub Pages (`https://<owner>.github.io/<repo>/`)
 
+### Dev preview automation
+
+Workflow: `.github/workflows/flatpak-dev-preview.yml`
+
+Trigger preview build:
+- every push to `dev`
+- or `workflow_dispatch`
+
+On `dev`:
+- builds `io.lazaro.Lazaro-dev-latest.flatpak`
+- uploads artifact in GitHub Actions
+- updates prerelease `dev-latest` in GitHub Releases
+
+Install latest dev preview directly:
+
+```bash
+flatpak install --user https://github.com/carlosrm22/lazaro/releases/download/dev-latest/io.lazaro.Lazaro-dev-latest.flatpak
+```
+
 ## Updates strategy
 
 For automatic updates on user machines, use the published Flatpak repo:

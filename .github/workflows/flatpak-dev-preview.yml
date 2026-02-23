@@ -1,0 +1,65 @@
+name: Flatpak Dev Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  build-dev-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder python3-pip
+
+      - name: Install Rust source generator
+        run: |
+          python3 -m pip install --user flatpak-cargo-generator
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install Flatpak SDK and runtime
+        run: |
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.freedesktop.Sdk.Extension.rust-stable//24.08
+
+      - name: Generate cargo-sources.json
+        run: |
+          flatpak-cargo-generator Cargo.lock -o packaging/flatpak/cargo-sources.json
+
+      - name: Build dev bundle
+        run: |
+          mkdir -p dist
+          flatpak-builder --force-clean --repo=dist/repo dist/build packaging/flatpak/io.lazaro.Lazaro.yml
+          flatpak build-update-repo dist/repo --generate-static-deltas --prune
+          BUNDLE_NAME="io.lazaro.Lazaro-dev-latest.flatpak"
+          flatpak build-bundle dist/repo "dist/${BUNDLE_NAME}" io.lazaro.Lazaro stable
+          echo "BUNDLE_NAME=${BUNDLE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-dev-preview
+          path: dist/*.flatpak
+
+      - name: Publish/refresh prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          target_commitish: dev
+          name: Lazaro Dev Preview
+          prerelease: true
+          body: |
+            Build automático de la rama `dev`.
+
+            Instalación:
+            `flatpak install --user https://github.com/${{ github.repository }}/releases/download/dev-latest/io.lazaro.Lazaro-dev-latest.flatpak`
+          files: dist/*.flatpak
+          fail_on_unmatched_files: true
