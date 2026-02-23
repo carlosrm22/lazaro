@@ -16,19 +16,21 @@ body {
 }
 
 .overlay {
-  width: min(92vw, 920px);
-  min-height: min(72vh, 760px);
+  width: min(94vw, 960px);
+  min-height: min(86vh, 760px);
+  max-height: calc(100vh - 1.5rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
   gap: 1rem;
-  padding: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 20px;
   background: linear-gradient(160deg, rgba(23, 40, 63, 0.9), rgba(7, 15, 26, 0.94));
   box-shadow: 0 28px 100px rgba(0, 0, 0, 0.42);
+  overflow: auto;
 }
 
 .overlay h1,

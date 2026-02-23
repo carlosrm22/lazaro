@@ -20,7 +20,9 @@ use lazaro_core::{
 };
 use notify_rust::Notification;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, Emitter, Manager, PhysicalPosition, Position, WebviewUrl, WebviewWindowBuilder,
+};
 
 #[derive(Debug, thiserror::Error)]
 enum AppError {
@@ -435,6 +437,8 @@ fn open_overlay(
             let _ = window.close();
         }
 
+        let monitor_geometry = resolve_overlay_geometry(&app_handle);
+
         let base_builder = WebviewWindowBuilder::new(
             &app_handle,
             "break-overlay",
@@ -445,7 +449,10 @@ fn open_overlay(
         .always_on_top(true)
         .resizable(false)
         .skip_taskbar(true)
-        .inner_size(920.0, 680.0);
+        .inner_size(
+            monitor_geometry.width as f64,
+            monitor_geometry.height as f64,
+        );
 
         let builder = if strict_mode {
             base_builder.closable(false)
@@ -454,7 +461,16 @@ fn open_overlay(
         };
 
         if let Ok(window) = builder.build() {
-            let _ = window.center();
+            if let (Some(x), Some(y)) = (monitor_geometry.x, monitor_geometry.y) {
+                if window
+                    .set_position(Position::Physical(PhysicalPosition::new(x, y)))
+                    .is_err()
+                {
+                    let _ = window.center();
+                }
+            } else {
+                let _ = window.center();
+            }
             let _ = window.set_focus();
         }
     });
@@ -469,6 +485,57 @@ fn open_overlay(
             strict_mode,
         },
     );
+}
+
+struct OverlayGeometry {
+    width: u32,
+    height: u32,
+    x: Option<i32>,
+    y: Option<i32>,
+}
+
+fn resolve_overlay_geometry(app: &AppHandle) -> OverlayGeometry {
+    let maybe_monitor = app
+        .get_webview_window("main")
+        .and_then(|window| window.current_monitor().ok().flatten())
+        .or_else(|| app.primary_monitor().ok().flatten());
+
+    let Some(monitor) = maybe_monitor else {
+        return OverlayGeometry {
+            width: 920,
+            height: 680,
+            x: None,
+            y: None,
+        };
+    };
+
+    let size = monitor.size();
+    let position = monitor.position();
+
+    let max_width = size.width.saturating_sub(48).max(360);
+    let max_height = size.height.saturating_sub(48).max(260);
+    let target_width = ((size.width as f64) * 0.62).round() as u32;
+    let target_height = ((size.height as f64) * 0.62).round() as u32;
+
+    let width = clamp_dimension(target_width, 420, max_width);
+    let height = clamp_dimension(target_height, 300, max_height);
+
+    let x = position.x + ((size.width.saturating_sub(width)) / 2) as i32;
+    let y = position.y + ((size.height.saturating_sub(height)) / 2) as i32;
+
+    OverlayGeometry {
+        width,
+        height,
+        x: Some(x),
+        y: Some(y),
+    }
+}
+
+fn clamp_dimension(target: u32, min: u32, max: u32) -> u32 {
+    if max <= min {
+        return max;
+    }
+    target.clamp(min, max)
 }
 
 fn close_overlay(app: &AppHandle) {
