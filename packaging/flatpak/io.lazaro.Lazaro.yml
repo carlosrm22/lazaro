@@ -30,6 +30,6 @@ modules:
       - install -D packaging/flatpak/io.lazaro.Lazaro.metainfo.xml /app/share/metainfo/io.lazaro.Lazaro.metainfo.xml
       - install -D packaging/flatpak/io.lazaro.Lazaro.svg /app/share/icons/hicolor/scalable/apps/io.lazaro.Lazaro.svg
     sources:
-      - packaging/flatpak/cargo-sources.json
+      - cargo-sources.json
       - type: dir
         path: ../../
