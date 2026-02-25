@@ -58,7 +58,7 @@ jobs:
               <h1>Lázaro Flatpak Repo</h1>
               <p>Agregar repositorio:</p>
               <pre>curl -L -o /tmp/lazaro-flatpak-public.asc https://carlosrm22.github.io/lazaro/lazaro-flatpak-public.asc
-flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-public.asc lazaro https://carlosrm22.github.io/lazaro/</pre>
+              flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-public.asc lazaro https://carlosrm22.github.io/lazaro/</pre>
               <p>Instalar app:</p>
               <pre>flatpak install --user lazaro io.lazaro.Lazaro</pre>
               <p>Actualizar app:</p>
