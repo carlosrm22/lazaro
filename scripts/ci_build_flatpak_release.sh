@@ -28,6 +28,8 @@ fi
 
 mkdir -p dist
 flatpak-builder --force-clean --repo=dist/repo dist/build packaging/flatpak/io.lazaro.Lazaro.yml
+# Sign exported app commit(s) so clients with gpg-verify=true can install/update.
+flatpak build-sign dist/repo io.lazaro.Lazaro stable --gpg-homedir="$GNUPGHOME" --gpg-sign="$KEY_ID"
 flatpak build-update-repo dist/repo --generate-static-deltas --prune --gpg-homedir="$GNUPGHOME" --gpg-sign="$KEY_ID"
 gpg --batch --homedir "$GNUPGHOME" --armor --export "$KEY_ID" > dist/repo/lazaro-flatpak-public.asc
 
