@@ -98,7 +98,7 @@ flatpak run io.lazaro.Lazaro
 
 ### Release automation
 
-Workflow: `.github/workflows/flatpak-release.yml`
+Workflow: `.github/workflows/release-flatpak.yml`
 
 Trigger release build:
 - push a tag `v*` (for example `v0.1.1`)
