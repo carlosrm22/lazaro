@@ -108,7 +108,12 @@ On tag:
 - builds Flatpak bundle (`.flatpak`)
 - uploads bundle as workflow artifact
 - attaches bundle to GitHub Release
-- publishes Flatpak repo to GitHub Pages (`https://<owner>.github.io/<repo>/`)
+- signs Flatpak repo summary with GPG
+- publishes Flatpak repo + public key to GitHub Pages (`https://<owner>.github.io/<repo>/`)
+
+Required GitHub Secrets for signing:
+- `FLATPAK_GPG_PRIVATE_KEY` (ASCII armored private key) or
+- `FLATPAK_GPG_PRIVATE_KEY_BASE64` (same key in base64)
 
 ### Dev preview automation
 
@@ -136,9 +141,10 @@ flatpak run io.lazaro.Lazaro
 For automatic updates on user machines, use the published Flatpak repo:
 
 ```bash
-flatpak remote-add --if-not-exists lazaro https://carlosrm22.github.io/lazaro/
-flatpak install lazaro io.lazaro.Lazaro
-flatpak update io.lazaro.Lazaro
+curl -L -o /tmp/lazaro-flatpak-public.asc https://carlosrm22.github.io/lazaro/lazaro-flatpak-public.asc
+flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-public.asc lazaro https://carlosrm22.github.io/lazaro/
+flatpak install --user lazaro io.lazaro.Lazaro
+flatpak update --user io.lazaro.Lazaro
 ```
 
 Helper script:
