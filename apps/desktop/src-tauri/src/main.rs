@@ -58,6 +58,7 @@ impl Serialize for AppError {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum StartupMode {
+    Disabled,
     XdgOnly,
     XdgAndSystemd,
 }
@@ -598,6 +599,28 @@ fn ensure_systemd_user_service() -> Result<(), AppError> {
     Ok(())
 }
 
+fn disable_xdg_autostart() -> Result<(), AppError> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+    let file = Path::new(&home)
+        .join(".config/autostart")
+        .join("io.lazaro.Lazaro.desktop");
+    if file.exists() {
+        fs::remove_file(file)?;
+    }
+    Ok(())
+}
+
+fn disable_systemd_user_service() -> Result<(), AppError> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+    let file = Path::new(&home)
+        .join(".config/systemd/user")
+        .join("lazaro.service");
+    if file.exists() {
+        fs::remove_file(file)?;
+    }
+    Ok(())
+}
+
 fn runtime_loop(
     app: AppHandle,
     persistent: Arc<AppState>,
@@ -1020,10 +1043,19 @@ fn set_startup_mode(
     mode: StartupMode,
     state: tauri::State<'_, BackendState>,
 ) -> Result<(), AppError> {
-    ensure_xdg_autostart()?;
-
-    if matches!(mode, StartupMode::XdgAndSystemd) {
-        ensure_systemd_user_service()?;
+    match mode {
+        StartupMode::Disabled => {
+            disable_xdg_autostart()?;
+            disable_systemd_user_service()?;
+        }
+        StartupMode::XdgOnly => {
+            ensure_xdg_autostart()?;
+            disable_systemd_user_service()?;
+        }
+        StartupMode::XdgAndSystemd => {
+            ensure_xdg_autostart()?;
+            ensure_systemd_user_service()?;
+        }
     }
 
     {
@@ -1033,6 +1065,10 @@ fn set_startup_mode(
             .lock()
             .map_err(|e| AppError::Io(format!("mutex poisoned: {e}")))?;
         match mode {
+            StartupMode::Disabled => {
+                guard.settings.startup_xdg = false;
+                guard.settings.startup_systemd_user = false;
+            }
             StartupMode::XdgOnly => {
                 guard.settings.startup_xdg = true;
                 guard.settings.startup_systemd_user = false;
