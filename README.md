@@ -101,8 +101,7 @@ flatpak run io.lazaro.Lazaro
 Workflow: `.github/workflows/release-flatpak.yml`
 
 Trigger release build:
-- push a tag `v*` (for example `v0.1.1`)
-- or run `workflow_dispatch` manually
+- push a tag `v*` (for example `v0.1.3`)
 
 On tag:
 - builds Flatpak bundle (`.flatpak`)
