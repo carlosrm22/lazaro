@@ -1,0 +1,13 @@
+name: Release Probe
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "probe-*"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "probe ok"
