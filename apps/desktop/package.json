@@ -1,7 +1,7 @@
 {
   "name": "lazaro-desktop",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.8",
   "scripts": {
     "tauri": "WEBKIT_DISABLE_DMABUF_RENDERER=1 WEBKIT_DISABLE_COMPOSITING_MODE=1 GSK_RENDERER=cairo tauri"
   },

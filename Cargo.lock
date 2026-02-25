@@ -1806,11 +1806,11 @@ dependencies = [
 
 [[package]]
 name = "lazaro-core"
-version = "0.1.1"
+version = "0.1.8"
 
 [[package]]
 name = "lazaro-desktop"
-version = "0.1.1"
+version = "0.1.8"
 dependencies = [
  "lazaro-core",
  "notify-rust",
