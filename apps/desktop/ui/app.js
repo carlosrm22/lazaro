@@ -93,6 +93,16 @@ function unitSelectId(fieldId) {
   return `${fieldId}__unit`;
 }
 
+function resolveStartupModeFromSettings(settings) {
+  if (settings?.startup_systemd_user) {
+    return "xdg_and_systemd";
+  }
+  if (settings?.startup_xdg) {
+    return "xdg_only";
+  }
+  return "disabled";
+}
+
 function normalizeNumber(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
@@ -384,7 +394,7 @@ function queueAutoSaveCheckbox(fieldKey, options = {}) {
       await syncActiveProfileFromSettings();
 
       if (syncStartup) {
-        const startupMode = next.startup_systemd_user ? "xdg_and_systemd" : "xdg_only";
+        const startupMode = resolveStartupModeFromSettings(next);
         await invoke("set_startup_mode", { mode: startupMode });
         state.settings = await invoke("get_settings");
       }
@@ -592,7 +602,7 @@ document.getElementById("save-settings").addEventListener("click", async () => {
     state.settingsDirty = false;
     await syncActiveProfileFromSettings();
 
-    const startupMode = next.startup_systemd_user ? "xdg_and_systemd" : "xdg_only";
+    const startupMode = resolveStartupModeFromSettings(next);
     await invoke("set_startup_mode", { mode: startupMode });
   });
 });
