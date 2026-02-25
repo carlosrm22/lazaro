@@ -53,10 +53,10 @@ jobs:
             <head>
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <title>Lazaro Flatpak Repo</title>
+              <title>Lázaro Flatpak Repo</title>
             </head>
             <body style="font-family: sans-serif; max-width: 780px; margin: 2rem auto; line-height: 1.5;">
-              <h1>Lazaro Flatpak Repo</h1>
+              <h1>Lázaro Flatpak Repo</h1>
               <p>Agregar repositorio:</p>
               <pre>flatpak remote-add --if-not-exists lazaro https://carlosrm22.github.io/lazaro/</pre>
               <p>Instalar app:</p>
