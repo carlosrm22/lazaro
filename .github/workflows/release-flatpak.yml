@@ -1,6 +1,7 @@
 name: Flatpak Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -19,7 +20,7 @@ jobs:
       - name: Install Flatpak tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder python3-pip gnupg
+          sudo apt-get install -y flatpak flatpak-builder python3-pip
 
       - name: Install Rust source generator
         run: |
@@ -31,43 +32,6 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           flatpak install --user -y flathub org.gnome.Platform//48 org.gnome.Sdk//48 org.freedesktop.Sdk.Extension.rust-stable//24.08
 
-      - name: Import Flatpak signing key
-        env:
-          FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
-          FLATPAK_GPG_PRIVATE_KEY_BASE64: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY_BASE64 }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${FLATPAK_GPG_PRIVATE_KEY:-}" ] && [ -z "${FLATPAK_GPG_PRIVATE_KEY_BASE64:-}" ]; then
-            echo "Missing secret FLATPAK_GPG_PRIVATE_KEY or FLATPAK_GPG_PRIVATE_KEY_BASE64"
-            exit 1
-          fi
-
-          export GNUPGHOME="$RUNNER_TEMP/gnupg"
-          mkdir -p "$GNUPGHOME"
-          chmod 700 "$GNUPGHOME"
-
-          KEY_FILE="$RUNNER_TEMP/lazaro-flatpak-signing.key"
-          if [ -n "${FLATPAK_GPG_PRIVATE_KEY_BASE64:-}" ]; then
-            printf '%s' "$FLATPAK_GPG_PRIVATE_KEY_BASE64" | base64 --decode > "$KEY_FILE"
-          else
-            printf '%s' "$FLATPAK_GPG_PRIVATE_KEY" > "$KEY_FILE"
-          fi
-
-          gpg --batch --homedir "$GNUPGHOME" --import "$KEY_FILE"
-
-          KEY_ID="$(gpg --batch --homedir "$GNUPGHOME" --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5; exit}')"
-          if [ -z "$KEY_ID" ]; then
-            echo "No secret key imported for Flatpak signing"
-            exit 1
-          fi
-
-          FINGERPRINT="$(gpg --batch --homedir "$GNUPGHOME" --with-colons --fingerprint "$KEY_ID" | awk -F: '/^fpr:/ {print $10; exit}')"
-
-          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
-          echo "FLATPAK_GPG_KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
-          echo "FLATPAK_GPG_FINGERPRINT=$FINGERPRINT" >> "$GITHUB_ENV"
-
       - name: Generate cargo-sources.json
         run: |
           flatpak-cargo-generator Cargo.lock -o packaging/flatpak/cargo-sources.json
@@ -76,34 +40,32 @@ jobs:
         run: |
           mkdir -p dist
           flatpak-builder --force-clean --repo=dist/repo dist/build packaging/flatpak/io.lazaro.Lazaro.yml
-          flatpak build-update-repo dist/repo --generate-static-deltas --prune --gpg-homedir="$GNUPGHOME" --gpg-sign="$FLATPAK_GPG_KEY_ID"
-          gpg --batch --homedir "$GNUPGHOME" --armor --export "$FLATPAK_GPG_KEY_ID" > dist/repo/lazaro-flatpak-public.asc
+          flatpak build-update-repo dist/repo --generate-static-deltas --prune
           BUNDLE_NAME="io.lazaro.Lazaro-${GITHUB_REF_NAME:-dev}-${GITHUB_SHA::7}.flatpak"
-          flatpak build-bundle dist/repo "dist/${BUNDLE_NAME}" io.lazaro.Lazaro stable --gpg-homedir="$GNUPGHOME" --gpg-sign="$FLATPAK_GPG_KEY_ID"
+          flatpak build-bundle dist/repo "dist/${BUNDLE_NAME}" io.lazaro.Lazaro stable
           echo "BUNDLE_NAME=${BUNDLE_NAME}" >> "$GITHUB_ENV"
 
       - name: Add repo landing page
         run: |
-          cat > dist/repo/index.html <<'HTML'
+          cat > dist/repo/index.html <<'EOF'
           <!doctype html>
-          <html lang="en">
+          <html lang="es">
             <head>
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <title>Lazaro Flatpak Repo</title>
+              <title>Lázaro Flatpak Repo</title>
             </head>
             <body style="font-family: sans-serif; max-width: 780px; margin: 2rem auto; line-height: 1.5;">
-              <h1>Lazaro Flatpak Repo</h1>
-              <p>Download signing key and add remote:</p>
-              <pre>curl -L -o /tmp/lazaro-flatpak-public.asc https://carlosrm22.github.io/lazaro/lazaro-flatpak-public.asc
-flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-public.asc lazaro https://carlosrm22.github.io/lazaro/</pre>
-              <p>Install app:</p>
-              <pre>flatpak install --user lazaro io.lazaro.Lazaro</pre>
-              <p>Update app:</p>
-              <pre>flatpak update --user io.lazaro.Lazaro</pre>
+              <h1>Lázaro Flatpak Repo</h1>
+              <p>Agregar repositorio:</p>
+              <pre>flatpak remote-add --if-not-exists lazaro https://carlosrm22.github.io/lazaro/</pre>
+              <p>Instalar app:</p>
+              <pre>flatpak install lazaro io.lazaro.Lazaro</pre>
+              <p>Actualizar app:</p>
+              <pre>flatpak update io.lazaro.Lazaro</pre>
             </body>
           </html>
-          HTML
+          EOF
 
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
@@ -118,17 +80,20 @@ flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-publi
           path: dist/repo
 
       - name: Attach bundle to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.flatpak
           generate_release_notes: true
 
       - name: Upload Pages artifact
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/repo
 
   deploy-pages:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build-flatpak
     runs-on: ubuntu-latest
     environment:
