@@ -60,6 +60,8 @@ jobs:
             Build automático de la rama `dev`.
 
             Instalación:
-            `flatpak install --user https://github.com/${{ github.repository }}/releases/download/dev-latest/io.lazaro.Lazaro-dev-latest.flatpak`
+            `curl -L -o /tmp/lazaro-dev.flatpak https://github.com/${{ github.repository }}/releases/download/dev-latest/io.lazaro.Lazaro-dev-latest.flatpak`
+            `flatpak install --user /tmp/lazaro-dev.flatpak`
+            `flatpak run io.lazaro.Lazaro`
           files: dist/*.flatpak
           fail_on_unmatched_files: true

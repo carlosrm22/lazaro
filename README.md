@@ -123,10 +123,12 @@ On `dev`:
 - uploads artifact in GitHub Actions
 - updates prerelease `dev-latest` in GitHub Releases
 
-Install latest dev preview directly:
+Install latest dev preview:
 
 ```bash
-flatpak install --user https://github.com/carlosrm22/lazaro/releases/download/dev-latest/io.lazaro.Lazaro-dev-latest.flatpak
+curl -L -o /tmp/lazaro-dev.flatpak https://github.com/carlosrm22/lazaro/releases/download/dev-latest/io.lazaro.Lazaro-dev-latest.flatpak
+flatpak install --user /tmp/lazaro-dev.flatpak
+flatpak run io.lazaro.Lazaro
 ```
 
 ## Updates strategy
