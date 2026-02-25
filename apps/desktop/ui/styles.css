@@ -59,9 +59,14 @@ body {
   margin-bottom: 0.85rem;
 }
 
+.card-title-row .muted {
+  text-wrap: balance;
+}
+
 h2 {
   margin: 0;
   font-size: 1rem;
+  min-width: 0;
 }
 
 .row {
@@ -76,6 +81,14 @@ h2 {
 
 .actions-row {
   margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.7rem;
+}
+
+.actions-row button {
+  width: 100%;
+  min-height: 42px;
 }
 
 button {
@@ -86,6 +99,9 @@ button {
   padding: 0.58rem 0.95rem;
   font-weight: 700;
   cursor: pointer;
+  line-height: 1.25;
+  white-space: normal;
+  text-wrap: balance;
 }
 
 button.secondary {
@@ -138,6 +154,8 @@ button:hover {
 
 .runtime-item strong {
   font-size: 0.95rem;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .profiles-grid {
@@ -157,6 +175,7 @@ fieldset {
   border-radius: 10px;
   padding: 0.65rem;
   margin: 0;
+  min-width: 0;
 }
 
 legend {
@@ -172,9 +191,10 @@ label {
   font-size: 0.82rem;
   margin-bottom: 0.55rem;
   color: var(--muted);
+  min-width: 0;
 }
 
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select {
   background: color-mix(in srgb, var(--panel) 65%, black);
   color: var(--text);
@@ -184,6 +204,8 @@ select {
   font-family: inherit;
   appearance: none;
   -webkit-appearance: none;
+  width: 100%;
+  min-width: 0;
 }
 
 input[type="number"] {
@@ -212,7 +234,14 @@ option {
 }
 
 .unit-input select {
-  min-width: 78px;
+  min-width: 86px;
+}
+
+.settings-grid > *,
+.profiles-grid > *,
+.runtime-grid > *,
+.metrics-grid > * {
+  min-width: 0;
 }
 
 .checkbox-label {
@@ -220,12 +249,15 @@ option {
   align-items: center;
   gap: 0.5rem;
   color: var(--text);
+  cursor: pointer;
 }
 
 .checkbox-label input {
   width: 16px;
   height: 16px;
   margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .metrics-grid {
@@ -339,8 +371,47 @@ pre {
 }
 
 @media (max-width: 760px) {
+  .container {
+    margin-top: 1rem;
+    padding: 0 0.7rem;
+  }
+
   .card-title-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .compact-row {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .compact-row button {
+    flex: 1 1 160px;
+  }
+
+  .actions-row {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .settings-grid,
+  .profiles-grid,
+  .runtime-grid,
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-row {
+    grid-template-columns: 1fr;
+  }
+
+  .unit-input {
+    grid-template-columns: 1fr;
+  }
+
+  .unit-input select {
+    width: 100%;
   }
 }

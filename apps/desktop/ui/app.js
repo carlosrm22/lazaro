@@ -46,6 +46,8 @@ const state = {
   events: [],
   refreshTimer: null,
   showDebug: false,
+  settingsDirty: false,
+  autoSaveQueue: Promise.resolve(),
 };
 
 const settingsFields = [
@@ -77,6 +79,14 @@ const timeFields = new Set([
   "rest_snooze_seconds",
   "daily_limit_seconds",
   "daily_limit_snooze_seconds",
+]);
+
+const autoSaveCheckboxFields = new Set([
+  "desktop_notifications",
+  "overlay_notifications",
+  "sound_notifications",
+  "startup_xdg",
+  "startup_systemd_user",
 ]);
 
 function unitSelectId(fieldId) {
@@ -319,6 +329,7 @@ function renderProfiles() {
 
 function renderSettingsForm() {
   if (!state.settings) return;
+  if (state.settingsDirty) return;
 
   for (const key of settingsFields) {
     const element = document.getElementById(key);
@@ -339,6 +350,51 @@ function renderSettingsForm() {
       element.value = value ?? "";
     }
   }
+}
+
+function setupSettingsDirtyTracking() {
+  for (const key of settingsFields) {
+    const element = document.getElementById(key);
+    if (!element || key === "active_profile_id") continue;
+
+    const eventName =
+      element.type === "checkbox" || element.tagName === "SELECT"
+        ? "change"
+        : "input";
+
+    element.addEventListener(eventName, () => {
+      state.settingsDirty = true;
+
+      if (element.type === "checkbox" && autoSaveCheckboxFields.has(key)) {
+        const syncStartup = key === "startup_xdg" || key === "startup_systemd_user";
+        queueAutoSaveCheckbox(key, { syncStartup });
+      }
+    });
+  }
+}
+
+function queueAutoSaveCheckbox(fieldKey, options = {}) {
+  const { syncStartup = false } = options;
+
+  state.autoSaveQueue = state.autoSaveQueue
+    .then(async () => {
+      const next = collectSettingsFromForm();
+      state.settings = await invoke("update_settings", { settings: next });
+      state.settingsDirty = false;
+      await syncActiveProfileFromSettings();
+
+      if (syncStartup) {
+        const startupMode = next.startup_systemd_user ? "xdg_and_systemd" : "xdg_only";
+        await invoke("set_startup_mode", { mode: startupMode });
+        state.settings = await invoke("get_settings");
+      }
+
+      pushEvent("info", `auto-guardado: ${fieldKey}`);
+      renderAll();
+    })
+    .catch((err) => {
+      pushEvent("error", `ERROR auto-guardado ${fieldKey}: ${String(err)}`);
+    });
 }
 
 function collectSettingsFromForm() {
@@ -490,9 +546,10 @@ async function withAction(name, action) {
   await refresh();
 }
 
-document.getElementById("refresh").addEventListener("click", () =>
-  refresh().catch((err) => pushEvent("error", `ERROR refresh: ${String(err)}`))
-);
+document.getElementById("refresh").addEventListener("click", () => {
+  state.settingsDirty = false;
+  refresh().catch((err) => pushEvent("error", `ERROR refresh: ${String(err)}`));
+});
 
 document.getElementById("runtime-start").addEventListener("click", () =>
   withAction("iniciar runtime", () => invoke("start_runtime"))
@@ -523,6 +580,7 @@ document.getElementById("strict").addEventListener("click", async () => {
   await withAction("modo estricto", async () => {
     const next = { ...state.settings, block_level: "strict" };
     state.settings = await invoke("update_settings", { settings: next });
+    state.settingsDirty = false;
     await syncActiveProfileFromSettings();
   });
 });
@@ -531,6 +589,7 @@ document.getElementById("save-settings").addEventListener("click", async () => {
   await withAction("guardar ajustes", async () => {
     const next = collectSettingsFromForm();
     state.settings = await invoke("update_settings", { settings: next });
+    state.settingsDirty = false;
     await syncActiveProfileFromSettings();
 
     const startupMode = next.startup_systemd_user ? "xdg_and_systemd" : "xdg_only";
@@ -655,4 +714,5 @@ if (!state.refreshTimer) {
 }
 
 setupUnitSelectors();
+setupSettingsDirtyTracking();
 refresh().catch((err) => pushEvent("error", `error inicial: ${String(err)}`));
