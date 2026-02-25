@@ -40,10 +40,9 @@ jobs:
         run: |
           mkdir -p dist
           flatpak-builder --force-clean --repo=dist/repo dist/build packaging/flatpak/io.lazaro.Lazaro.yml
-          flatpak build-update-repo dist/repo --generate-static-deltas --prune --gpg-homedir="$GNUPGHOME" --gpg-sign="$FLATPAK_GPG_KEY_ID"
-          gpg --batch --homedir "$GNUPGHOME" --armor --export "$FLATPAK_GPG_KEY_ID" > dist/repo/lazaro-flatpak-public.asc
+          flatpak build-update-repo dist/repo --generate-static-deltas --prune
           BUNDLE_NAME="io.lazaro.Lazaro-${GITHUB_REF_NAME:-dev}-${GITHUB_SHA::7}.flatpak"
-          flatpak build-bundle dist/repo "dist/${BUNDLE_NAME}" io.lazaro.Lazaro stable --gpg-homedir="$GNUPGHOME" --gpg-sign="$FLATPAK_GPG_KEY_ID"
+          flatpak build-bundle dist/repo "dist/${BUNDLE_NAME}" io.lazaro.Lazaro stable
           echo "BUNDLE_NAME=${BUNDLE_NAME}" >> "$GITHUB_ENV"
 
       - name: Add repo landing page
@@ -59,12 +58,11 @@ jobs:
             <body style="font-family: sans-serif; max-width: 780px; margin: 2rem auto; line-height: 1.5;">
               <h1>Lázaro Flatpak Repo</h1>
               <p>Agregar repositorio:</p>
-              <pre>curl -L -o /tmp/lazaro-flatpak-public.asc https://carlosrm22.github.io/lazaro/lazaro-flatpak-public.asc
-flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-public.asc lazaro https://carlosrm22.github.io/lazaro/</pre>
+              <pre>flatpak remote-add --if-not-exists lazaro https://carlosrm22.github.io/lazaro/</pre>
               <p>Instalar app:</p>
-              <pre>flatpak install --user lazaro io.lazaro.Lazaro</pre>
+              <pre>flatpak install lazaro io.lazaro.Lazaro</pre>
               <p>Actualizar app:</p>
-              <pre>flatpak update --user io.lazaro.Lazaro</pre>
+              <pre>flatpak update io.lazaro.Lazaro</pre>
             </body>
           </html>
           EOF
