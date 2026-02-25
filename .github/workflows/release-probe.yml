@@ -10,4 +10,9 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "probe ok"
+      - name: probe with secret env
+        env:
+          TEST_SECRET: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+        run: |
+          echo "probe ok"
+          test -n "${TEST_SECRET:-}" && echo "secret_present" || echo "secret_missing"
