@@ -11,6 +11,23 @@ This repository contains:
 - initial Flatpak manifest and CI workflow.
 - Flatpak release pipeline with GitHub Releases + GitHub Pages repo for updates.
 
+## Quick install (Linux + Flatpak)
+
+Install and run:
+
+```bash
+curl -L -o /tmp/lazaro-flatpak-public.asc https://carlosrm22.github.io/lazaro/lazaro-flatpak-public.asc
+flatpak remote-add --user --if-not-exists --gpg-import=/tmp/lazaro-flatpak-public.asc lazaro https://carlosrm22.github.io/lazaro/
+flatpak install --user -y lazaro io.lazaro.Lazaro
+flatpak run io.lazaro.Lazaro
+```
+
+Update later:
+
+```bash
+flatpak update --user io.lazaro.Lazaro
+```
+
 ## Features planned in V1
 
 - Micro break, rest break, and daily limit timers.
