@@ -54,7 +54,7 @@ jobs:
         with:
           tag_name: dev-latest
           target_commitish: dev
-          name: Lazaro Dev Preview
+          name: Lázaro Dev Preview
           prerelease: true
           body: |
             Build automático de la rama `dev`.

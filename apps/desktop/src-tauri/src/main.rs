@@ -444,7 +444,7 @@ fn open_overlay(
             "break-overlay",
             WebviewUrl::App("overlay.html".into()),
         )
-        .title("Lazaro - Descanso")
+        .title("Lázaro - Descanso")
         .decorations(false)
         .always_on_top(true)
         .resizable(false)
@@ -576,7 +576,7 @@ fn ensure_xdg_autostart() -> Result<(), AppError> {
     let exec = resolve_autostart_exec();
 
     let content = format!(
-        "[Desktop Entry]\nType=Application\nName=Lazaro\nComment=Personalized break reminder\nExec={exec}\nTerminal=false\nX-GNOME-Autostart-enabled=true\n"
+        "[Desktop Entry]\nType=Application\nName=Lázaro\nComment=Recordatorio personalizado de descansos\nExec={exec}\nTerminal=false\nX-GNOME-Autostart-enabled=true\n"
     );
 
     fs::write(file, content)?;
@@ -591,7 +591,7 @@ fn ensure_systemd_user_service() -> Result<(), AppError> {
     let exec = resolve_autostart_exec();
 
     let content = format!(
-        "[Unit]\nDescription=Lazaro break reminder\nAfter=graphical-session.target\n\n[Service]\nType=simple\nExecStart={exec}\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n"
+        "[Unit]\nDescription=Lázaro break reminder\nAfter=graphical-session.target\n\n[Service]\nType=simple\nExecStart={exec}\nRestart=on-failure\n\n[Install]\nWantedBy=default.target\n"
     );
 
     fs::write(file, content)?;
@@ -647,7 +647,7 @@ fn runtime_loop(
                             );
                             send_notification(
                                 &settings_dto,
-                                "Lazaro",
+                                "Lázaro",
                                 &format!("Comienza el descanso {}", break_kind_to_string(kind)),
                             );
                         }
@@ -724,7 +724,7 @@ fn runtime_loop(
                     );
                     send_notification(
                         &settings_dto,
-                        "Lazaro",
+                        "Lázaro",
                         &format!("Toca descanso {}", break_kind_to_string(kind)),
                     );
                 }
@@ -764,7 +764,7 @@ fn runtime_loop(
                     );
                     send_notification(
                         &settings_dto,
-                        "Lazaro",
+                        "Lázaro",
                         "Buen trabajo. Descanso completado.",
                     );
                     let _ = persistent.save();
@@ -1047,10 +1047,9 @@ fn set_startup_mode(
     Ok(())
 }
 
-#[tauri::command]
-fn start_runtime(
+fn start_runtime_internal(
     app: AppHandle,
-    state: tauri::State<'_, BackendState>,
+    state: &BackendState,
 ) -> Result<RuntimeStatusDto, AppError> {
     let settings = {
         let guard = state
@@ -1087,6 +1086,14 @@ fn start_runtime(
         .map_err(|e| AppError::Io(format!("mutex poisoned: {e}")))?
         .clone();
     Ok(status)
+}
+
+#[tauri::command]
+fn start_runtime(
+    app: AppHandle,
+    state: tauri::State<'_, BackendState>,
+) -> Result<RuntimeStatusDto, AppError> {
+    start_runtime_internal(app, &state)
 }
 
 #[tauri::command]
@@ -1188,6 +1195,14 @@ fn main() {
 
     tauri::Builder::default()
         .manage(backend)
+        .setup(|app| {
+            let app_handle = app.handle().clone();
+            let state = app.state::<BackendState>();
+            if let Err(error) = start_runtime_internal(app_handle, &state) {
+                eprintln!("failed to auto-start runtime: {error}");
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_settings,
             update_settings,

@@ -7,7 +7,7 @@ mkdir -p "$UNIT_DIR"
 
 cat > "$UNIT_FILE" <<'UNIT'
 [Unit]
-Description=Lazaro break reminder daemon
+Description=Lázaro break reminder daemon
 After=graphical-session.target
 
 [Service]

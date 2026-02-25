@@ -1,6 +1,6 @@
-# Lazaro
+# Lázaro
 
-Lazaro is a Linux-first break reminder app designed to be strict when you want it and flexible when you do not.
+Lázaro is a Linux-first break reminder app designed to be strict when you want it and flexible when you do not.
 
 ## Current status
 

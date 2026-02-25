@@ -8,8 +8,8 @@ cat > "$AUTOSTART_DIR/io.lazaro.Lazaro.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Lazaro
-Comment=Personalized break reminder
+Name=Lázaro
+Comment=Recordatorio personalizado de descansos
 Exec=lazaro
 Terminal=false
 Categories=Utility;
